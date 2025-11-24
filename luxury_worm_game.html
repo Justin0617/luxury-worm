@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Luxury Worm (made by yohan)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      background:#050510;
+      height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      font-family:sans-serif;
+      color:white;
+      user-select:none;
+      -webkit-user-select:none;
+      touch-action:manipulation;
+    }
+    #game-outer{
+      width:100%;
+      max-width:1280px;
+      padding:8px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:8px;
+    }
+    #top-controls{
+      width:100%;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      font-size:13px;
+    }
+    #mode-select{
+      padding:4px 8px;
+      border-radius:8px;
+      border:1px solid rgba(0,255,200,0.5);
+      background:#050a10;
+      color:#e8feff;
+    }
+    #mode-label{
+      opacity:0.8;
+    }
+
+    #game-container{
+      position:relative;
+      border:1px solid rgba(0,255,180,0.4);
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow:0 0 40px rgba(0,255,200,0.25);
+      width:100%;
+      aspect-ratio:16/9;
+      background:#0b0f17;
+    }
+    #game{
+      width:100%;
+      height:100%;
+      display:block;
+    }
+    #ui{
+      position:absolute;
+      top:12px;
+      left:16px;
+      font-size:14px;
+      text-shadow:0 0 8px black;
+      line-height:1.5;
+      pointer-events:none;
+    }
+    #game-title{
+      font-size:16px;
+      margin-bottom:4px;
+      letter-spacing:0.05em;
+      opacity:0.9;
+    }
+    #score-box{
+      margin-top:4px;
+      padding:6px 12px;
+      border-radius:999px;
+      background:rgba(0,10,15,0.8);
+      border:1px solid rgba(0,255,180,0.4);
+      font-size:13px;
+      display:inline-block;
+    }
+    #center-msg{
+      position:absolute;
+      inset:0;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+      flex-direction:column;
+      pointer-events:none;
+      display:none;
+      color:white;
+      text-shadow:0 0 16px black;
+    }
+    #center-msg h1{
+      font-size:42px;
+    }
+    #center-msg p{
+      font-size:18px;
+      margin-top:8px;
+    }
+
+    #help-box{
+      position:absolute;
+      top:12px;
+      right:16px;
+      font-size:12px;
+      opacity:0.85;
+      text-align:right;
+      line-height:1.5;
+      pointer-events:none;
+    }
+
+    /* 모바일 터치 컨트롤 */
+    #touch-controls{
+      width:100%;
+      max-width:360px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:10px;
+      margin-top:4px;
+    }
+    .tc-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      grid-template-rows:repeat(3,1fr);
+      gap:6px;
+      width:150px;
+      height:150px;
+    }
+    .tc-btn{
+      border:none;
+      outline:none;
+      border-radius:999px;
+      background:rgba(8,20,30,0.95);
+      border:1px solid rgba(0,255,200,0.4);
+      color:#e8feff;
+      font-size:20px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 0 10px rgba(0,0,0,0.6);
+      touch-action:none;
+    }
+    .tc-btn:active{
+      background:rgba(0,255,200,0.2);
+      box-shadow:0 0 18px rgba(0,255,200,0.7);
+    }
+
+    #hint-text{
+      font-size:11px;
+      opacity:0.7;
+      text-align:center;
+      margin-top:2px;
+    }
+
+    @media (max-width:600px){
+      #center-msg h1{font-size:32px;}
+      #center-msg p{font-size:14px;}
+      #game-title{font-size:13px;}
+      #help-box{font-size:11px;}
+    }
+  </style>
+</head>
+<body>
+
+<div id="game-outer">
+  <div id="top-controls">
+    <div id="mode-label">Mode:</div>
+    <select id="mode-select">
+      <option value="slow">Slow</option>
+      <option value="normal" selected>Normal</option>
+      <option value="hard">Hard</option>
+    </select>
+    <div style="font-size:11px; opacity:0.8;">
+      PC: 화살표 / WASD &nbsp;|&nbsp; 모바일: 아래 버튼
+    </div>
+  </div>
+
+  <div id="game-container">
+    <canvas id="game" width="1280" height="720"></canvas>
+
+    <!-- 왼쪽 상단 UI -->
+    <div id="ui">
+      <div id="game-title">Luxury Worm — made by yohan</div>
+      <div id="score-box">
+        SCORE: <span id="score">0</span>
+        &nbsp;&nbsp;•&nbsp;&nbsp;
+        BEST: <span id="best">0</span>
+      </div>
+    </div>
+
+    <!-- 오른쪽 상단 사용방법 -->
+    <div id="help-box">
+      <div>● 먹으면 지렁이 길이 + 1</div>
+      <div>벽 · 몸 · 적 지렁이 충돌 → Game Over</div>
+      <div>PC: R 키 → 재시작</div>
+    </div>
+
+    <!-- 중앙 Game Over 표시 -->
+    <div id="center-msg">
+      <h1>GAME OVER</h1>
+      <p>PC: R 키 / 모바일: 새로고침 후 다시 시작</p>
+    </div>
+  </div>
+
+  <!-- 모바일용 방향 버튼 -->
+  <div id="touch-controls">
+    <div class="tc-grid">
+      <div></div>
+      <button class="tc-btn" data-dir="up">▲</button>
+      <div></div>
+      <button class="tc-btn" data-dir="left">◀</button>
+      <div></div>
+      <button class="tc-btn" data-dir="right">▶</button>
+      <div></div>
+      <button class="tc-btn" data-dir="down">▼</button>
+      <div></div>
+    </div>
+  </div>
+  <div id="hint-text">모바일: 아래 버튼 / PC: 방향키나 WASD 로 조작 (대각선 없음).</div>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const scoreEl = document.getElementById("score");
+const bestEl  = document.getElementById("best");
+const centerMsg = document.getElementById("center-msg");
+const modeSelect = document.getElementById("mode-select");
+
+const CELL = 25;
+const COLS = Math.floor(canvas.width / CELL);
+const ROWS = Math.floor(canvas.height / CELL);
+
+let snake = [];
+let enemySnake = [];
+let direction = {x:1, y:0};
+let nextDir  = {x:1, y:0};
+let enemyDir = {x:-1, y:0};
+
+let food = null;
+let score = 0;
+let best  = 0;
+let gameOver = false;
+
+let baseSpeed = 0.10;
+let speed = baseSpeed;
+
+let lastTime = 0;
+let acc = 0;
+let globalTime = 0;
+
+let particles = [];
+
+// -------- Difficulty Modes ----------
+function applyMode(mode){
+  if(mode === "slow"){
+    baseSpeed = 0.16;
+  } else if (mode === "hard"){
+    baseSpeed = 0.07;
+  } else {
+    baseSpeed = 0.10;
+  }
+  speed = baseSpeed;
+}
+modeSelect.addEventListener("change", (e)=>{
+  applyMode(e.target.value);
+});
+
+// -------- Game Init ----------
+function resetGame(){
+  snake = [
+    {x:10, y:10},
+    {x:9,  y:10},
+    {x:8,  y:10}
+  ];
+  enemySnake = [
+    {x:COLS-10, y:ROWS-10},
+    {x:COLS-9,  y:ROWS-10},
+    {x:COLS-8,  y:ROWS-10}
+  ];
+  direction = {x:1,y:0};
+  nextDir  = {x:1,y:0};
+  enemyDir = {x:-1,y:0};
+  score = 0;
+  gameOver = false;
+  centerMsg.style.display = "none";
+  particles = [];
+  spawnFood();
+  updateUI();
+  applyMode(modeSelect.value);
+}
+
+function updateUI(){
+  scoreEl.textContent = score;
+  bestEl.textContent  = best;
+}
+
+function spawnFood(){
+  while(true){
+    const x = Math.floor(Math.random()*COLS);
+    const y = Math.floor(Math.random()*ROWS);
+    if(!snake.some(s=>s.x===x && s.y===y) &&
+       !enemySnake.some(s=>s.x===x && s.y===y)){
+      food = {x,y};
+      return;
+    }
+  }
+}
+
+// -------- Direction Control ----------
+function changeDirection(dx,dy){
+  // 반대로 꺾는 것 방지 (상하좌우만 사용)
+  if(dx === -direction.x && dy === -direction.y) return;
+  if(Math.abs(dx) + Math.abs(dy) !== 1) return; // 대각선 막기
+  nextDir = {x:dx, y:dy};
+}
+
+// PC 키보드
+window.addEventListener("keydown", e=>{
+  const k = e.key.toLowerCase();
+  if(gameOver && k === "r"){
+    resetGame();
+    return;
+  }
+
+  if(k==="w" || k==="arrowup")    changeDirection(0,-1);
+  if(k==="s" || k==="arrowdown")  changeDirection(0, 1);
+  if(k==="a" || k==="arrowleft")  changeDirection(-1,0);
+  if(k==="d" || k==="arrowright") changeDirection(1, 0);
+});
+
+// 모바일 터치 버튼
+const btns = document.querySelectorAll(".tc-btn");
+btns.forEach(btn=>{
+  const dir = btn.dataset.dir;
+  const handle = (e)=>{
+    e.preventDefault();
+    if(dir==="up")    changeDirection(0,-1);
+    if(dir==="down")  changeDirection(0, 1);
+    if(dir==="left")  changeDirection(-1,0);
+    if(dir==="right") changeDirection(1, 0);
+  };
+  btn.addEventListener("touchstart", handle, {passive:false});
+  btn.addEventListener("click", handle);
+});
+
+// -------- Game Loop ----------
+const SPEED_MIN = 0.04;
+function gameLoop(t){
+  const dt = (t - lastTime) / 1000;
+  lastTime = t;
+  globalTime += dt;
+
+  if(!gameOver){
+    if(modeSelect.value === "hard"){
+      const factor = 1 - Math.min(0.6, score / 500);
+      speed = Math.max(SPEED_MIN, baseSpeed * factor);
+    } else {
+      speed = baseSpeed;
+    }
+
+    acc += dt;
+    while(acc > speed){
+      acc -= speed;
+      updateGame();
+    }
+    updateParticles(dt);
+  }
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+// -------- Core Update ----------
+function updateGame(){
+  direction = nextDir;
+  const head = snake[0];
+  const newHead = {x: head.x + direction.x, y: head.y + direction.y};
+
+  // 벽 충돌
+  if(newHead.x < 0 || newHead.x >= COLS || newHead.y < 0 || newHead.y >= ROWS){
+    return endGame();
+  }
+  // 자기 몸 충돌
+  if(snake.some(s=>s.x===newHead.x && s.y===newHead.y)){
+    return endGame();
+  }
+  // 적 지렁이 몸 충돌
+  if(enemySnake.some(s=>s.x===newHead.x && s.y===newHead.y)){
+    return endGame();
+  }
+
+  snake.unshift(newHead);
+
+  // 먹이 먹음
+  if(newHead.x === food.x && newHead.y === food.y){
+    score += 10;
+    if(score > best) best = score;
+    updateUI();
+    spawnFoodParticles(food.x, food.y);
+    spawnFood();
+  } else {
+    snake.pop();
+  }
+
+  // 적 지렁이 AI 이동
+  updateEnemy();
+
+  const enemyHead = enemySnake[0];
+
+  // 적이 먹이 먹으면
+  if(enemyHead.x === food.x && enemyHead.y === food.y){
+    enemySnake.push({...enemySnake[enemySnake.length-1]});
+    spawnFoodParticles(food.x, food.y, true);
+    spawnFood();
+  }
+
+  // 머리끼리 충돌
+  if(enemyHead.x === newHead.x && enemyHead.y === newHead.y){
+    return endGame();
+  }
+}
+
+function endGame(){
+  gameOver = true;
+  centerMsg.style.display = "flex";
+}
+
+// -------- Enemy AI --------
+function updateEnemy(){
+  const head = enemySnake[0];
+  let dx = Math.sign(food.x - head.x);
+  let dy = Math.sign(food.y - head.y);
+
+  // 대각선 제거: 우선 x 또는 y 쪽을 우선
+  if(Math.abs(dx) > Math.abs(dy)){
+    dy = 0;
+  } else {
+    dx = 0;
+  }
+
+  if(Math.random() < 0.2){
+    dx = (Math.random()<0.5? -1:1);
+    dy = 0;
+  } else if (Math.random() < 0.2){
+    dy = (Math.random()<0.5? -1:1);
+    dx = 0;
+  }
+
+  const candidateDirections = shuffle([
+    {x:dx, y:dy},
+    {x:dx, y:0},
+    {x:0, y:dy},
+    {x:1, y:0},
+    {x:-1,y:0},
+    {x:0, y:1},
+    {x:0, y:-1}
+  ]);
+
+  let chosen = enemyDir;
+  for(const d of candidateDirections){
+    if(Math.abs(d.x)+Math.abs(d.y)!==1) continue;
+    const nx = head.x + d.x;
+    const ny = head.y + d.y;
+    if(nx<0 || nx>=COLS || ny<0 || ny>=ROWS) continue;
+    if(enemySnake.some(s=>s.x===nx && s.y===ny)) continue;
+    chosen = d;
+    break;
+  }
+
+  enemyDir = chosen;
+  const newHead = {x: head.x + enemyDir.x, y: head.y + enemyDir.y};
+
+  if(snake.some(s=>s.x===newHead.x && s.y===newHead.y)){
+    enemyDir = {x:-enemyDir.x, y:-enemyDir.y};
+    enemySnake.unshift({x: head.x + enemyDir.x, y: head.y + enemyDir.y});
+  } else {
+    enemySnake.unshift(newHead);
+  }
+
+  enemySnake.pop();
+}
+
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+// -------- Particles --------
+function spawnFoodParticles(cellX, cellY, isEnemy=false){
+  const cx = cellX * CELL + CELL/2;
+  const cy = cellY * CELL + CELL/2;
+  const count = 18;
+  for(let i=0;i<count;i++){
+    const angle = Math.random()*Math.PI*2;
+    const speed = 80 + Math.random()*120;
+    particles.push({
+      x:cx,
+      y:cy,
+      vx:Math.cos(angle)*speed,
+      vy:Math.sin(angle)*speed,
+      age:0,
+      life:0.5+Math.random()*0.4,
+      enemy:isEnemy
+    });
+  }
+}
+function updateParticles(dt){
+  particles = particles.filter(p=>{
+    p.x += p.vx*dt;
+    p.y += p.vy*dt;
+    p.age += dt;
+    p.vy += 40*dt;
+    return p.age < p.life;
+  });
+}
+
+// -------- Draw --------
+function draw(){
+  // 배경: 약간 3D 느낌 나는 라디얼 그라디언트
+  const grad = ctx.createRadialGradient(
+    canvas.width/2, canvas.height/2, 0,
+    canvas.width/2, canvas.height/2, canvas.width/1.2
+  );
+  grad.addColorStop(0, "#101528");
+  grad.addColorStop(0.6, "#050814");
+  grad.addColorStop(1, "#03040a");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  drawFood();
+  drawParticles();
+  drawSnake(enemySnake, false); // 적 먼저
+  drawSnake(snake, true);       // 플레이어 위에
+}
+
+// Food (펄싱)
+function drawFood(){
+  const baseR = CELL*0.4;
+  const pulse = 1 + 0.2*Math.sin(globalTime*6);
+  const r = baseR*pulse;
+
+  const x = food.x*CELL + CELL/2;
+  const y = food.y*CELL + CELL/2;
+
+  const gradient = ctx.createRadialGradient(x-3,y-4,2,x,y,r);
+  gradient.addColorStop(0,"rgba(255,255,255,1)");
+  gradient.addColorStop(0.4,"rgba(255,200,140,1)");
+  gradient.addColorStop(1,"rgba(230,90,40,0.95)");
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle = gradient;
+  ctx.shadowColor = "rgba(255,150,90,0.9)";
+  ctx.shadowBlur = 18;
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawParticles(){
+  particles.forEach(p=>{
+    const t = p.age / p.life;
+    const alpha = 1 - t;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,3*(1-t),0,Math.PI*2);
+    if(p.enemy){
+      ctx.fillStyle = `rgba(200,140,255,${alpha.toFixed(2)})`;
+    }else{
+      ctx.fillStyle = `rgba(255,210,140,${alpha.toFixed(2)})`;
+    }
+    ctx.fill();
+  });
+}
+
+// 3D 스타일 스네이크 렌더링
+function drawSnake(snakeArr, isPlayer){
+  if(!snakeArr.length) return;
+
+  const centers = snakeArr.map(seg=>({
+    x: seg.x*CELL + CELL/2,
+    y: seg.y*CELL + CELL/2
+  }));
+
+  const maxRadius = CELL*0.42;
+
+  for(let i=snakeArr.length-1;i>=0;i--){
+    const c = centers[i];
+    const t = i / Math.max(1,snakeArr.length-1);
+
+    const radius = maxRadius * (0.7 + 0.3*(1-t));
+
+    // 그림자 (바닥에 타원)
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(c.x, c.y + radius*0.4, radius*1.3, radius*0.55, 0, 0, Math.PI*2);
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fill();
+    ctx.restore();
+
+    // 몸체 그라디언트
+    let baseHue;
+    if(isPlayer){
+      baseHue = (globalTime*60 + (1-t)*220) % 360;
+    }else{
+      baseHue = 280 + t*40;
+    }
+
+    const topColor    = `hsl(${baseHue}, 85%, 70%)`;
+    const midColor    = `hsl(${baseHue}, 80%, 55%)`;
+    const bottomColor = `hsl(${baseHue}, 75%, 38%)`;
+
+    const g = ctx.createLinearGradient(c.x, c.y-radius, c.x, c.y+radius);
+    g.addColorStop(0.0, "rgba(255,255,255,0.55)");
+    g.addColorStop(0.2, topColor);
+    g.addColorStop(0.55, midColor);
+    g.addColorStop(1.0, bottomColor);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(c.x, c.y, radius*1.1, radius, 0, 0, Math.PI*2);
+    ctx.fillStyle = g;
+    ctx.shadowColor = isPlayer ? "rgba(0,255,255,0.7)" : "rgba(200,160,255,0.7)";
+    ctx.shadowBlur = isPlayer ? 18 : 12;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 머리에 하이라이트 + 눈 (플레이어만)
+  const headCenter = centers[0];
+  if(isPlayer){
+    const r = maxRadius;
+
+    // 상단 하이라이트
+    ctx.save();
+    const h = ctx.createRadialGradient(
+      headCenter.x - r*0.4, headCenter.y - r*0.6, 1,
+      headCenter.x, headCenter.y, r
+    );
+    h.addColorStop(0,"rgba(255,255,255,0.9)");
+    h.addColorStop(0.4,"rgba(255,255,255,0.0)");
+    ctx.beginPath();
+    ctx.ellipse(headCenter.x, headCenter.y - r*0.35, r*0.9, r*0.5, -0.4, 0, Math.PI*2);
+    ctx.fillStyle = h;
+    ctx.fill();
+    ctx.restore();
+
+    // 눈
+    ctx.save();
+    const dir = direction;
+    const eyeOffset = r*0.45;
+    let ex1x, ex1y, ex2x, ex2y;
+    if(dir.y<0){ // 위
+      ex1y = -eyeOffset; ex2y = -eyeOffset;
+      ex1x = -eyeOffset*0.5; ex2x = eyeOffset*0.5;
+    } else if(dir.y>0){ // 아래
+      ex1y = eyeOffset; ex2y = eyeOffset;
+      ex1x = -eyeOffset*0.5; ex2x = eyeOffset*0.5;
+    } else if(dir.x>0){ // 오른쪽
+      ex1x = eyeOffset; ex2x = eyeOffset;
+      ex1y = -eyeOffset*0.45; ex2y = eyeOffset*0.45;
+    } else { // 왼쪽
+      ex1x = -eyeOffset; ex2x = -eyeOffset;
+      ex1y = -eyeOffset*0.45; ex2y = eyeOffset*0.45;
+    }
+    const cx = headCenter.x, cy = headCenter.y;
+    const eyeR = r*0.17;
+    const pupilR = r*0.09;
+
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.arc(cx+ex1x, cy+ex1y, eyeR, 0, Math.PI*2);
+    ctx.arc(cx+ex2x, cy+ex2y, eyeR, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.arc(cx+ex1x, cy+ex1y, pupilR, 0, Math.PI*2);
+    ctx.arc(cx+ex2x, cy+ex2y, pupilR, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+}
+
+// WebSocket 멀티플레이용 골격 (서버 필요)
+// let socket = null;
+// function initMultiplayer(){
+//   const url = "wss://your-server-url";
+//   socket = new WebSocket(url);
+//   socket.onopen = ()=>{ /* 연결됨 */ };
+//   socket.onmessage = (event)=>{ /* 상태 동기화 */ };
+//   socket.onclose = ()=>{ /* 종료 */ };
+// }
+
+// Safari용 roundRect polyfill
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    this.beginPath();
+    this.moveTo(x+r, y);
+    this.arcTo(x+w, y,   x+w, y+h, r);
+    this.arcTo(x+w, y+h, x,   y+h, r);
+    this.arcTo(x,   y+h, x,   y,   r);
+    this.arcTo(x,   y,   x+w, y,   r);
+    this.closePath();
+  };
+}
+
+resetGame();
+requestAnimationFrame(gameLoop);
+</script>
+
+</body>
+</html>
